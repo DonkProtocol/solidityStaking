@@ -48,7 +48,7 @@ describe("Staking", function () {
         signerBalance.sub(transferAmount).sub(gasUsed)
       );
 
-      //test the change in contract's ether balance
+      //test the change in contract's ether balance app
       expect(await provider.getBalance(staking.address)).to.equal(
         contractBalance.add(transferAmount)
       );
