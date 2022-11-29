@@ -58,7 +58,7 @@ contract Staking {
         uint256 numDays,
         uint256 weiAmount
     ) private pure returns (uint256) {
-        return (basisPoints / 10000) * weiAmount;
+        return (basisPoints * weiAmount) / 10000; //700 /10000 => 0.07
     }
 
     function modifyLockPeriods(uint256 numDays, uint256 basisPoints) external {

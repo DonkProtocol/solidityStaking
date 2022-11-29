@@ -53,5 +53,46 @@ describe("Staking", function () {
         contractBalance.add(transferAmount)
       );
     });
+
+    it("adds a position to positions", async function () {
+      const provider = waffle.provider;
+      let position;
+      const transferAmount = ethers.utils.parseEther("1.0");
+
+      position = await staking.positions(0);
+
+      expect(position.positionId).to.equal(0);
+      expect(position.walletAddress).to.equal(
+        "0x0000000000000000000000000000000000000000"
+      );
+      expect(position.createdDate).to.equal(0);
+      expect(position.unlockDate).to.equal(0);
+      expect(position.percentInterest).to.equal(0);
+      expect(position.weiStaked).to.equal(0);
+      expect(position.weiInterest).to.equal(0);
+      expect(position.open).to.equal(false);
+
+      expect(await staking.currentPositionId()).to.equal(0);
+
+      data = { value: transferAmount };
+      const transaction = await staking.connect(signer1).stakeEther(90, data);
+      const receipt = await transaction.wait();
+      const block = await provider.getBlock(receipt.blockNumber);
+
+      position = await staking.positions(0);
+
+      expect(position.positionId).to.equal(0);
+      expect(position.walletAddress).to.equal(signer1.address);
+      expect(position.createdDate).to.equal(block.timestamp);
+      expect(position.unlockDate).to.equal(block.timestamp + 86400 * 90);
+      expect(position.percentInterest).to.equal(1000);
+      expect(position.weiStaked).to.equal(transferAmount);
+      expect(position.weiInterest).to.equal(
+        ethers.BigNumber.from(transferAmount).mul(1000).div(10000)
+      );
+      expect(position.open).to.equal(true);
+
+      expect(await staking.currentPositionId()).to.equal(1);
+    });
   });
 });
