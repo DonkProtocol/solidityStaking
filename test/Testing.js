@@ -94,5 +94,204 @@ describe("Staking", function () {
 
       expect(await staking.currentPositionId()).to.equal(1);
     });
+
+    it("adds addres and positionId to postitionIdsByAddress", async function () {
+      const transferAmount = ethers.utils.parseEther("0.5");
+
+      const data = { value: transferAmount };
+      await staking.connect(signer1).stakeEther(30, data);
+      await staking.connect(signer1).stakeEther(30, data);
+      await staking.connect(signer2).stakeEther(90, data);
+
+      expect(await staking.positionIdsByAddress(signer1.address, 0)).to.equal(
+        0
+      );
+      expect(await staking.positionIdsByAddress(signer1.address, 1)).to.equal(
+        1
+      );
+      expect(await staking.positionIdsByAddress(signer2.address, 0)).to.equal(
+        2
+      );
+    });
+  });
+
+  describe("modifyLockPeriods", function () {
+    describe("owner", function () {
+      it("should create a new lock period", async function () {
+        await staking.connect(signer1).modifyLockPeriods(100, 999);
+
+        expect(await staking.tiers(100)).to.equal(999);
+        expect(await staking.lockPeriods(3)).to.equal(100);
+      });
+    });
+
+    it("should modify an existing lock period", async function () {
+      await staking.connect(signer1).modifyLockPeriods(30, 150);
+
+      expect(await staking.tiers(30)).to.equal(150);
+    });
+
+    describe("non-owner", function () {
+      it("reverts", async function () {
+        expect(
+          staking.connect(signer2).modifyLockPeriods(100, 999)
+        ).to.be.revertedWith("Only owner may modify staking periods");
+      });
+    });
+  });
+
+  describe("getLockPeriods", function () {
+    it("returns all lock periods", async () => {
+      const lockPeriods = await staking.getLockPeriods();
+
+      expect(lockPeriods.map((v) => Number(v._hex))).to.eql([30, 90, 180]);
+    });
+  });
+
+  describe("getInterestRate", function () {
+    it("return the intereste rate for a specific lockPeriod", async () => {
+      const interestRate = await staking.getInterestRate(30);
+      expect(interestRate).to.equal(700);
+    });
+  });
+
+  describe("getPositionById", function () {
+    it("return data about a specific position, given a positionId", async () => {
+      const provider = waffle.provider;
+
+      const transferAmount = ethers.utils.parseEther("5");
+      const data = { value: transferAmount };
+      const transaction = await staking.connect(signer1).stakeEther(90, data);
+      const receipt = transaction.wait();
+      const block = await provider.getBlock(receipt.blockNumber);
+
+      const position = await staking
+        .connect(signer1.address)
+        .getPositionByID(0);
+
+      expect(position.positionId).to.equal(0);
+      expect(position.walletAddress).to.equal(signer1.address);
+      expect(position.createdDate).to.equal(block.timestamp);
+      expect(position.unlockDate).to.equal(block.timestamp + 86400 * 90);
+      expect(position.percentInterest).to.equal(1000);
+      expect(position.weiStaked).to.equal(transferAmount);
+      expect(position.weiInterest).to.equal(
+        ethers.BigNumber.from(transferAmount).mul(1000).div(10000)
+      );
+      expect(position.open).to.equal(true);
+    });
+  });
+
+  describe("getPositionIdsForAddress", function () {
+    it("returns a list of positionIds created by a specific address", async () => {
+      let data;
+      let transaction;
+
+      data = { value: ethers.utils.parseEther("5") };
+      transaction = await staking.connect(signer1).stakeEther(90, data);
+
+      data = { value: ethers.utils.parseEther("10") };
+      transaction = await staking.connect(signer1).stakeEther(90, data);
+
+      const positionIds = await staking.getPositionIdsForAddress(
+        signer1.address
+      );
+
+      expect(positionIds.map((p) => Number(p))).to.eql([0, 1]);
+    });
+  });
+
+  describe("changeUnlockDate", function () {
+    describe("owner", function () {
+      it("change the unclockDate", async () => {
+        const data = { value: ethers.utils.parseEther("8") };
+        const transaction = await staking.connect(signer2).stakeEther(90, data);
+        const positionOld = await staking.getPositionByID(0);
+
+        const newUnlockDate = positionOld.unlockDate - 86400 * 500;
+        await staking.connect(signer1).changeUnlockDate(0, newUnlockDate);
+        const positionNew = await staking.getPositionByID(0);
+
+        expect(positionNew.unlockDate).to.be.equal(
+          positionOld.unlockDate - 86400 * 500
+        );
+      });
+    });
+    describe("non-owner", function () {
+      it("reverts", async () => {
+        const data = { value: ethers.utils.parseEther("8") };
+        const transaction = await staking.connect(signer2).stakeEther(90, data);
+        const positionOld = await staking.getPositionByID(0);
+
+        const newUnlockDate = positionOld.unlockDate - 86400 * 500;
+
+        expect(
+          staking.connect(signer1).changeUnlockDate(0, newUnlockDate)
+        ).to.be.revertedWith("Only owner may modify staking periods");
+      });
+    });
+  });
+
+  describe("closePosition", function () {
+    describe("after unlock date", function () {
+      it("transfer principal and interest", async () => {
+        let transaction;
+        let receipt;
+        let block;
+        const provider = waffle.provider;
+
+        const data = { value: ethers.utils.parseEther("8") };
+        transaction = await staking.connect(signer2).stakeEther(90, data);
+        receipt = transaction.wait();
+        block = await provider.getBlock(receipt.blockNumber);
+
+        const newUnlockDate = block.timestamp - 86400 * 100;
+        await staking.connect(signer1).changeUnlockDate(0, newUnlockDate);
+
+        const position = await staking.getPositionByID(0);
+
+        const signerBalanceBefore = await signer2.getBalance();
+
+        transaction = await staking.connect(signer2).closePosition(0);
+        receipt = await transaction.wait();
+
+        const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+        const signerBalanceAfter = await signer2.getBalance();
+
+        expect(signerBalanceAfter).to.equal(
+          signerBalanceBefore
+            .sub(gasUsed)
+            .add(position.weiStaked)
+            .add(position.weiInterest)
+        );
+      });
+    });
+
+    describe("before unlock date", function () {
+      it("transfer only principal", async () => {
+        let receipt;
+        let block;
+        const provider = waffle.provider;
+
+        const data = { value: ethers.utils.parseEther("5") };
+        transaction = await staking.connect(signer2).stakeEther(90, data);
+        receipt = transaction.wait();
+        block = await provider.getBlock(receipt.blockNumber);
+
+        const position = await staking.getPositionByID(0);
+
+        const signerBalanceBefore = await signer2.getBalance();
+
+        transaction = await staking.connect(signer2).closePosition(0);
+        receipt = await transaction.wait();
+
+        const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+        const signerBalanceAfter = await signer2.getBalance();
+
+        expect(signerBalanceAfter).to.equal(
+          signerBalanceBefore.sub(gasUsed).add(position.weiStaked)
+        );
+      });
+    });
   });
 });

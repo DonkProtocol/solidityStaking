@@ -100,7 +100,7 @@ contract Staking {
         positions[positionId].unlockDate = newUnlockDate;
     }
 
-    function closePostion(uint256 positionId) external {
+    function closePosition(uint256 positionId) external {
         require(
             positions[positionId].walletAddress == msg.sender,
             "Only position creator may modify position"
