@@ -287,7 +287,7 @@ describe("Staking", function () {
 
         const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
         const signerBalanceAfter = await signer2.getBalance();
-
+        //f
         expect(signerBalanceAfter).to.equal(
           signerBalanceBefore.sub(gasUsed).add(position.weiStaked)
         );
