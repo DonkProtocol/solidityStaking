@@ -5,7 +5,6 @@ import artifact from "./artifacts/contracts/Staking.sol/Staking.json";
 
 import NavBar from "./components/NavBar";
 import StakeModal from "./components/StakeModal";
-import { Bank, PiggyBank, Coin } from "react-bootstrap-icons";
 import { FaEthereum, FaRegMoneyBillAlt } from "react-icons/fa";
 
 const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -57,6 +56,8 @@ function App() {
     const assetIds = await contract
       .connect(signer)
       .getPositionIdsForAddress(address);
+
+    console.log(address);
     return assetIds;
   };
 
@@ -80,7 +81,7 @@ function App() {
         etherStaked: toEther(asset.weiStaked),
         open: asset.open,
       };
-      console.log(asset);
+
       setAssets((prev) => [...prev, parsedAsset]);
     });
   };
@@ -117,6 +118,15 @@ function App() {
 
   return (
     <div className="App">
+      <div className="video-bg">
+        <video width="320" height="240" autoPlay loop muted>
+          <source
+            src="https://assets.codepen.io/3364143/7btrrd.mp4"
+            type="video/mp4"
+          />
+          Your browser does not support the video tag.
+        </video>
+      </div>
       <div>
         <NavBar isConnected={isConnected} connect={connectAndLoad} />
       </div>
@@ -201,25 +211,31 @@ function App() {
           <br />
           {assets.length > 0 &&
             assets.map((a, idx) => (
-              <div className="row stakedAssets">
-                <div className="col-md-2">
+              <div className="row stakedAssets" key={idx}>
+                <div className="col-md-2 ">
                   <span>
                     <FaEthereum className="stakedLogoImg" />
                   </span>
                 </div>
-                <div className="col-md-2 stakingItem">
-                  {a.percentInterest} %
+                <div className="col-md-2 ">
+                  <span className="stakingItem">{a.percentInterest} %</span>
                 </div>
-                <div className="col-md-2 stakingItem">{a.etherStaked}</div>
-                <div className="col-md-2 stakingItem">{a.etherInterest}</div>
-                <div className="col-md-2 stakingItem">{a.daysRemaining}</div>
+                <div className="col-md-2 ">
+                  {" "}
+                  <span className="stakingItem">{a.etherStaked}</span>
+                </div>
+                <div className="col-md-2 ">
+                  {" "}
+                  <span className="stakingItem">{a.etherInterest}</span>
+                </div>
+                <div className="col-md-2 ">
+                  {" "}
+                  <span className="stakingItem">{a.daysRemaining}</span>
+                </div>
                 <div className="col-md-2 ">
                   {a.open ? (
-                    <div
-                      onClick={() => withdraw(a.positionId)}
-                      className="orangeMiniButton"
-                    >
-                      Withdraw
+                    <div onClick={() => withdraw(a.positionId)}>
+                      <span className="orangeMiniButton"> Withdraw</span>
                     </div>
                   ) : (
                     <span>closed</span>

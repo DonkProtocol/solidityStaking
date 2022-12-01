@@ -37,6 +37,19 @@ body {
   }
 }
 
+.video-bg {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /*////////////////////////////////////////////////////////////////////////////*/
 /* Nav Bar */
 
@@ -49,6 +62,7 @@ body {
   font-size: 24px;
   cursor: pointer;
   background-color: rgb(255 255 255 / 31%);
+  backdrop-filter: blur(0.65rem);
 }
 .connectButton:hover {
   background-color: #a01d2b;
@@ -65,11 +79,9 @@ body {
 /* Market */
 .marketContainer {
   width: 100%;
-  background: linear-gradient(
-    to bottom right,
-    rgba(255, 255, 255, 0.2),
-    rgba(200, 80, 255, 1)
-  );
+  box-shadow: rgba(12, 12, 12, 0.1) 0px 1px 1px 0px inset,
+    rgba(0, 0, 0, 0.25) 0px 50px 100px -20px,
+    rgba(3, 3, 3, 0.3) 0px 30px 60px -30px;
   box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5), -1 -1 2px #aaa, 1 1 2px #555;
   backdrop-filter: blur(0.65rem);
   -webkit-backdrop-filter: blur(0.65rem);
@@ -77,9 +89,6 @@ body {
   margin: 0 auto;
   border-radius: 4px;
   padding: 15px;
-  box-shadow: rgba(255, 255, 255, 0.1) 0px 1px 1px 0px inset,
-    rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
-    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
 }
 .subContainer {
   margin-bottom: 20px;
@@ -97,7 +106,7 @@ body {
   display: block;
   font-size: 24px;
   font-weight: 1000;
-  color: #62799c;
+  color: #ebeef1;
 }
 .logoImg {
   background-color: #fff;
@@ -107,11 +116,7 @@ body {
   width: 28px;
   height: 28px;
 }
-.stakingItem {
-  background-color: #000;
-  border-radius: 6px;
-  padding: 5px 0;
-}
+
 .marketHeader {
   color: #fff;
   font-size: 32px;
@@ -130,23 +135,19 @@ body {
 /*////////////////////////////////////////////////////////////////////////////*/
 /* Assets */
 .assetContainer {
-  background: linear-gradient(
-    to bottom right,
-    rgba(255, 255, 255, 0.2),
-    rgba(200, 80, 255, 1)
-  );
   width: 900px;
   min-height: 225px;
   margin: 0 auto;
+  backdrop-filter: blur(0.65rem);
   top: 50%;
   border-radius: 4px;
   padding: 15px;
   margin-top: 50px; /* space between sections */
   color: #fff;
   font-weight: 500;
-  box-shadow: rgba(255, 255, 255, 0.1) 0px 1px 1px 0px inset,
-    rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
-    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
+  box-shadow: rgba(12, 12, 12, 0.1) 0px 1px 1px 0px inset,
+    rgba(0, 0, 0, 0.25) 0px 50px 100px -20px,
+    rgba(3, 3, 3, 0.3) 0px 30px 60px -30px;
 }
 .columnHeaders {
   font-weight: 800;
@@ -155,6 +156,13 @@ body {
 }
 .stakedAssets {
   margin-top: 10px;
+  padding: 10px;
+}
+
+.stakingItem {
+  background-color: #000;
+  border-radius: 4px;
+  padding: 5px 15px;
 }
 .stakedLogoImg {
   background-color: #fff;
@@ -235,11 +243,10 @@ body {
 .orangeMiniButton {
   width: 100%;
   color: #000;
-  border-radius: 7px;
+  border-radius: 4px;
   background-color: rgb(224, 57, 57);
   cursor: pointer;
-  margin: 0 7px 0 0;
-  padding: 5px 0;
+  padding: 5px 10px 5px 10px;
 }
 
 .orangeMiniButton:hover {
