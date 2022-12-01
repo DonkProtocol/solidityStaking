@@ -108,7 +108,7 @@ contract Staking {
         );
         require(positions[positionId].open == true, "Position is closed");
 
-        positions[positionId].open == false;
+        positions[positionId].open = false;
 
         if (block.timestamp > positions[positionId].unlockDate) {
             uint256 amount = positions[positionId].weiStaked +
