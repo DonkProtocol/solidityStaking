@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-//contarct for staking
+//contract for staking
 contract Staking {
     address public owner;
 
