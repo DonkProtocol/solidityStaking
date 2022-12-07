@@ -38,7 +38,7 @@ contract Staking {
 
     function stakeEther(uint256 numDays) external payable {
         require(tiers[numDays] > 0, "Mapping not found");
-
+        //add a better form to condition this function to works only with the tiers wanted for the app
         positions[currentPositionId] = Position(
             currentPositionId,
             msg.sender,
