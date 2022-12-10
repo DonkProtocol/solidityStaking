@@ -112,7 +112,6 @@ function App() {
   };
 
   const withdraw = (positionId) => {
-    console.log(positionId);
     contract.connect(signer).closePosition(positionId);
   };
 

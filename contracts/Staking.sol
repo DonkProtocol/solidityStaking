@@ -46,7 +46,7 @@ contract Staking {
             block.timestamp + (numDays * 1 days),
             tiers[numDays],
             msg.value,
-            calculateInterest(tiers[numDays], numDays, msg.value),
+            calculateInterest(tiers[numDays], msg.value),
             true
         );
 
@@ -54,11 +54,11 @@ contract Staking {
         currentPositionId += 1;
     }
 
-    function calculateInterest(
-        uint256 basisPoints,
-        uint256 numDays,
-        uint256 weiAmount
-    ) private pure returns (uint256) {
+    function calculateInterest(uint256 basisPoints, uint256 weiAmount)
+        private
+        pure
+        returns (uint256)
+    {
         return (basisPoints * weiAmount) / 10000; //700 /10000 => 0.07 convert
     }
 

@@ -6,7 +6,7 @@ module.exports = {
   },
   networks: {
     goerli: {
-      url: process.env.RPC_URL,
+      url: process.env.STAKING_RPC_URL,
       accounts: [process.env.USER],
     },
   },
@@ -14,3 +14,6 @@ module.exports = {
     artifacts: "./client/src/artifacts",
   },
 };
+//env config keys
+//STAKING_RPC_URL
+//RPC_URL
