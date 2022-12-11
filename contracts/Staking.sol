@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 //contract for staking
@@ -36,6 +38,11 @@ contract Staking {
         lockPeriods.push(180);
     }
 
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Only owner may modify staking periods");
+        _;
+    }
+
     function stakeEther(uint256 numDays) external payable {
         require(tiers[numDays] > 0, "Mapping not found");
         //add a better form to condition this function to works only with the tiers wanted for the app
@@ -62,9 +69,10 @@ contract Staking {
         return (basisPoints * weiAmount) / 10000; //700 /10000 => 0.07 convert
     }
 
-    function modifyLockPeriods(uint256 numDays, uint256 basisPoints) external {
-        require(owner == msg.sender, "Only owner may modify staking periods");
-
+    function modifyLockPeriods(uint256 numDays, uint256 basisPoints)
+        external
+        onlyOwner
+    {
         tiers[numDays] = basisPoints;
         lockPeriods.push(numDays);
     }
@@ -95,9 +103,8 @@ contract Staking {
 
     function changeUnlockDate(uint256 positionId, uint256 newUnlockDate)
         external
+        onlyOwner
     {
-        require(owner == msg.sender, "Only owner may modify staking periods");
-
         positions[positionId].unlockDate = newUnlockDate;
     }
 
