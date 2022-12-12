@@ -22,4 +22,4 @@ module.exports = {
 //env config keys
 //STAKING_RPC_URL
 //RPC_URL
-//0x82ed3B2c38547426D634293E95d29F7B541b834c
+// token address 0x82ed3B2c38547426D634293E95d29F7B541b834c

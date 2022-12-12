@@ -1,9 +1,14 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  [signer1, signer2] = await ethers.getSigners();
+  const Staking = await ethers.getContractFactory("Staking");
 
-  console.log(ethers.utils.parseEther("10"));
+  staking = await Staking.deploy("0x82ed3B2c38547426D634293E95d29F7B541b834c");
+
+  const result = await staking.deployed();
+  //token adress ==>
+
+  console.log("Contract deployed at:", result.address);
 }
 
 main()

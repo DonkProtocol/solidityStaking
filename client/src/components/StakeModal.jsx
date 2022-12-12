@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 
 const StakeModal = (props) => {
-  const { onClose, stakingLength, stakingPercent, setAmount, stakeEther } =
-    props;
+  const { onClose, stakingLength, stakingPercent, setAmount, stake } = props;
 
   return (
     <>
       <div className="modal-class" onClick={props.onClose}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="modal-body">
-            <h2 className="titleHeader">Stake Ether</h2>
+            <h2 className="titleHeader">Stake</h2>
 
             <div className="row">
               <div className="col-md-9 fieldContainer">
@@ -30,7 +29,7 @@ const StakeModal = (props) => {
               </h6>
             </div>
             <div className="row">
-              <div onClick={() => stakeEther()} className="orangeButton">
+              <div onClick={() => stake()} className="orangeButton">
                 Stake
               </div>
             </div>

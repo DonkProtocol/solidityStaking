@@ -5,10 +5,11 @@ import artifact from "./artifacts/contracts/Staking.sol/Staking.json";
 import NavBar from "./components/NavBar";
 import StakeModal from "./components/StakeModal";
 import { FaEthereum, FaRegMoneyBillAlt } from "react-icons/fa";
+import { BsFillPersonCheckFill } from "react-icons/bs";
 import artifactToken from "./artifacts/contracts/StakingToken.sol/StakingYourToken.json";
 
-const CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const TOKEN_CONTRACT = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const CONTRACT_ADDRESS = "0x085fA7a07245603F89301e5Bc5D69284A357a7Fd";
+const TOKEN_CONTRACT = "0x82ed3B2c38547426D634293E95d29F7B541b834c";
 function App() {
   // general
   const [provider, setProvider] = useState(undefined);
@@ -111,15 +112,15 @@ function App() {
     setStakingPercent(stakingPercent);
   };
 
-  const stakeEther = async () => {
+  const stake = async () => {
     const wei = toWei(amount);
     const data = { value: wei };
-    console.log(await tokenContract.connect(signer).owner());
+
     await tokenContract.connect(signer).approve(CONTRACT_ADDRESS, wei);
     await tokenContract
       .connect(signer)
       .allowance(CONTRACT_ADDRESS, signerAddress);
-    contract.connect(signer).stakeEther(stakingLength, wei);
+    contract.connect(signer).stake(stakingLength, wei);
   };
 
   const withdraw = (positionId) => {
@@ -145,9 +146,9 @@ function App() {
         <div className="marketContainer">
           <div className="subContainer">
             <span>
-              <FaEthereum className="logoImg" />
+              <BsFillPersonCheckFill className="logoImg" />
             </span>
-            <span className="marketHeader">Ethereum Staking</span>
+            <span className="marketHeader">Staking</span>
           </div>
 
           <div className="row">
@@ -262,7 +263,7 @@ function App() {
           stakingPercent={stakingPercent}
           amount={amount}
           setAmount={setAmount}
-          stakeEther={stakeEther}
+          stake={stake}
         />
       )}
     </div>

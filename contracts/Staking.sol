@@ -48,7 +48,7 @@ contract Staking {
         _;
     }
 
-    function stakeEther(uint256 numDays, uint256 amount) external {
+    function stake(uint256 numDays, uint256 amount) external {
         require(tiers[numDays] > 0, "Mapping not found");
         //add a better form to condition this function to works only with the tiers wanted for the app
         stakingToken.transferFrom(msg.sender, address(this), amount);
