@@ -8,7 +8,7 @@ const NavBar = (props) => {
           <div className="connectButton">Connected</div>
         ) : (
           <div onClick={() => props.connect()} className="connectButton">
-            Connect Wallet
+            CONNECT WALLET
           </div>
         )}
       </div>

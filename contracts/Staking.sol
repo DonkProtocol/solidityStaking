@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 pragma solidity ^0.8.0;
 
 //contract for staking
 contract Staking {
     address public owner;
+    IERC20 public stakingToken;
 
     struct Position {
         uint256 positionId;
@@ -25,7 +28,7 @@ contract Staking {
     mapping(uint256 => uint256) public tiers;
     uint256[] public lockPeriods;
 
-    constructor() payable {
+    constructor(address token) {
         owner = msg.sender;
         currentPositionId = 0;
 
@@ -36,6 +39,8 @@ contract Staking {
         lockPeriods.push(30);
         lockPeriods.push(90);
         lockPeriods.push(180);
+
+        stakingToken = IERC20(token);
     }
 
     modifier onlyOwner() {
@@ -43,17 +48,19 @@ contract Staking {
         _;
     }
 
-    function stakeEther(uint256 numDays) external payable {
+    function stakeEther(uint256 numDays, uint256 amount) external {
         require(tiers[numDays] > 0, "Mapping not found");
         //add a better form to condition this function to works only with the tiers wanted for the app
+        stakingToken.transferFrom(msg.sender, address(this), amount);
+
         positions[currentPositionId] = Position(
             currentPositionId,
             msg.sender,
             block.timestamp,
             block.timestamp + (numDays * 1 days),
             tiers[numDays],
-            msg.value,
-            calculateInterest(tiers[numDays], msg.value),
+            amount,
+            calculateInterest(tiers[numDays], amount),
             true
         );
 
@@ -120,11 +127,10 @@ contract Staking {
         if (block.timestamp > positions[positionId].unlockDate) {
             uint256 amount = positions[positionId].weiStaked +
                 positions[positionId].weiInterest;
-            payable(msg.sender).call{value: amount}("");
+
+            stakingToken.transfer(msg.sender, amount);
         } else {
-            payable(msg.sender).call{value: positions[positionId].weiStaked}(
-                ""
-            );
+            stakingToken.transfer(msg.sender, positions[positionId].weiStaked);
         }
     }
 }

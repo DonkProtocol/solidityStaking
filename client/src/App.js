@@ -2,18 +2,19 @@ import "./App.css";
 import react, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import artifact from "./artifacts/contracts/Staking.sol/Staking.json";
-
 import NavBar from "./components/NavBar";
 import StakeModal from "./components/StakeModal";
 import { FaEthereum, FaRegMoneyBillAlt } from "react-icons/fa";
+import artifactToken from "./artifacts/contracts/StakingToken.sol/StakingYourToken.json";
 
-const CONTRACT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-
+const CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+const TOKEN_CONTRACT = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 function App() {
   // general
   const [provider, setProvider] = useState(undefined);
   const [signer, setSigner] = useState(undefined);
   const [contract, setContract] = useState(undefined);
+  const [tokenContract, setTokenContract] = useState(undefined);
   const [signerAddress, setSignerAddress] = useState(undefined);
 
   // assets
@@ -40,6 +41,12 @@ function App() {
         artifact.abi
       );
       setContract(contract);
+
+      const tokenContract = await new ethers.Contract(
+        TOKEN_CONTRACT,
+        artifactToken.abi
+      );
+      setTokenContract(tokenContract);
     };
     onLoad();
   }, []);
@@ -57,7 +64,6 @@ function App() {
       .connect(signer)
       .getPositionIdsForAddress(address);
 
-    console.log(address);
     return assetIds;
   };
 
@@ -105,10 +111,15 @@ function App() {
     setStakingPercent(stakingPercent);
   };
 
-  const stakeEther = () => {
+  const stakeEther = async () => {
     const wei = toWei(amount);
     const data = { value: wei };
-    contract.connect(signer).stakeEther(stakingLength, data);
+    console.log(await tokenContract.connect(signer).owner());
+    await tokenContract.connect(signer).approve(CONTRACT_ADDRESS, wei);
+    await tokenContract
+      .connect(signer)
+      .allowance(CONTRACT_ADDRESS, signerAddress);
+    contract.connect(signer).stakeEther(stakingLength, wei);
   };
 
   const withdraw = (positionId) => {
