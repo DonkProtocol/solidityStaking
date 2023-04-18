@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
 contract Staking {
     address public owner;
     IERC20 public stakingToken;
-    uint256 _aprReward = 2500;
+    uint256 _aprReward = 250000000000000000;
 
     struct Position {
         address walletAddress;
@@ -53,9 +53,19 @@ contract Staking {
             "the user should have an amount reward to have a harvest"
         );
 
-        stakingToken.transfer(msg.sender, position.rewardStaked);
+        //uint256 tokenBalance = stakingToken.balanceOf(address(this));
 
-        //TODO: reset harvest first time
+        uint256 apr = _aprReward;
+
+        uint256 rewardAmount = reward(
+            apr,
+            block.timestamp,
+            position.amountStaked,
+            position.createdDate
+        );
+
+        stakingToken.transfer(msg.sender, rewardAmount);
+
         position.createdDate = 0;
         position.rewardStaked = 0;
     }
@@ -78,5 +88,19 @@ contract Staking {
 
     function getPositions() external view returns (Position memory) {
         return position;
+    }
+
+    function reward(
+        uint256 apr,
+        uint256 current_time,
+        uint256 amount,
+        uint256 start_time
+    ) public pure returns (uint256) {
+        uint256 time_diff = current_time - start_time;
+        uint256 apr_per_second = apr / 100 / 31536000; // 1 year in seconds
+        uint256 apr_per_time_diff = apr_per_second * time_diff;
+        uint256 rewardAmount = (amount * apr_per_time_diff) / 1e18; // divide by 1e18 to convert back to integer
+
+        return rewardAmount;
     }
 }
