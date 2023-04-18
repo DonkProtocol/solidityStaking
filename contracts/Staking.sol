@@ -1,29 +1,22 @@
 // SPDX-License-Identifier: MIT
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/DateTime.sol";
 
 pragma solidity ^0.8.0;
 
 //contract for staking
 contract Staking {
-    using DateTime for uint256;
     address public owner;
     IERC20 public stakingToken;
+    uint256 _aprReward = 2500;
 
     struct Position {
         address walletAddress;
         uint256 createdDate;
         uint256 amountStaked;
         uint256 rewardStaked;
-        uint256 apr;
-        DateTimeLibrary timestamp;
     }
 
     Position position;
-
-    mapping(uint256 => Position) public positions;
-    mapping(address => uint256[]) public positionIdsByAddress;
 
     constructor(address token) {
         owner = msg.sender;
@@ -38,43 +31,52 @@ contract Staking {
         _;
     }
 
-    function stake(uint256 amount) external onlyOwner {
-        //add a better form to condition this function to works only with the tiers wanted for the app
+    function stake(uint256 amount) external {
         stakingToken.transferFrom(msg.sender, address(this), amount);
 
-        position = Position(
-            msg.sender,
-            position.amountStaked += amount,
-           //calculateInterest(tiers[numDays], amount),
-        );
+        position = Position({
+            walletAddress: msg.sender,
+            createdDate: block.timestamp,
+            amountStaked: position.amountStaked + amount,
+            rewardStaked: position.rewardStaked
+        });
     }
 
-    function getPositionIdsForAddress(
-        address walletAddress
-    ) external view returns (uint256[] memory) {
-        return positionIdsByAddress[walletAddress];
-    }
-
-    function unstake() external onlyOwner {
+    function harvest() external {
         require(
             position.walletAddress == msg.sender,
             "Only position creator may modify position"
         );
 
-        let amount = positions.amountStaked
+        require(
+            position.rewardStaked != 0,
+            "the user should have an amount reward to have a harvest"
+        );
 
-        stakingToken.transfer(msg.sender, amount);
+        stakingToken.transfer(msg.sender, position.rewardStaked);
+
+        //TODO: reset harvest first time
+        position.createdDate = 0;
+        position.rewardStaked = 0;
     }
 
-    function harvest() external onlyOwner {
+    function unstake() external {
         require(
-            position[positionId].walletAddress == msg.sender,
+            position.walletAddress == msg.sender,
             "Only position creator may modify position"
         );
 
-        let amount = positions.rewardStaked
+        require(
+            position.amountStaked != 0,
+            "the user should have an amount staked to unstake"
+        );
 
-        stakingToken.transfer(msg.sender, amount);
-        
+        stakingToken.transfer(msg.sender, position.amountStaked);
+
+        position.amountStaked = 0;
+    }
+
+    function getPositions() external view returns (Position memory) {
+        return position;
     }
 }
