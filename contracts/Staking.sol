@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/DateTime.sol";
 
 pragma solidity ^0.8.0;
 
 //contract for staking
 contract Staking {
+    using DateTime for uint256;
     address public owner;
     IERC20 public stakingToken;
 
@@ -13,11 +15,10 @@ contract Staking {
         uint256 positionId;
         address walletAddress;
         uint256 createdDate;
-        uint256 unlockDate;
-        uint256 percentInterest;
-        uint256 weiStaked;
-        uint256 weiInterest;
-        bool open;
+        uint256 amountStaked;
+        uint256 rewardStaked;
+        uint256 apr;
+        DateTimeLibrary timestamp;
     }
 
     Position position;
@@ -25,21 +26,10 @@ contract Staking {
     uint256 public currentPositionId;
     mapping(uint256 => Position) public positions;
     mapping(address => uint256[]) public positionIdsByAddress;
-    mapping(uint256 => uint256) public tiers;
-    uint256[] public lockPeriods;
 
     constructor(address token) {
         owner = msg.sender;
         currentPositionId = 0;
-
-        tiers[30] = 700;
-        tiers[90] = 1000;
-        tiers[180] = 1200;
-
-        lockPeriods.push(30);
-        lockPeriods.push(90);
-        lockPeriods.push(180);
-
         stakingToken = IERC20(token);
     }
 
@@ -48,11 +38,11 @@ contract Staking {
         _;
     }
 
-    function stake(uint256 numDays, uint256 amount) external {
-        require(tiers[numDays] > 0, "Mapping not found");
+    function stake(uint256 amount) external onlyOwner {
         //add a better form to condition this function to works only with the tiers wanted for the app
         stakingToken.transferFrom(msg.sender, address(this), amount);
 
+        //TODO: CHANGE THAT
         positions[currentPositionId] = Position(
             currentPositionId,
             msg.sender,
@@ -68,54 +58,28 @@ contract Staking {
         currentPositionId += 1;
     }
 
-    function calculateInterest(uint256 basisPoints, uint256 weiAmount)
-        private
-        pure
-        returns (uint256)
-    {
-        return (basisPoints * weiAmount) / 10000; //700 /10000 => 0.07 convert
-    }
-
-    function modifyLockPeriods(uint256 numDays, uint256 basisPoints)
-        external
-        onlyOwner
-    {
-        tiers[numDays] = basisPoints;
-        lockPeriods.push(numDays);
-    }
-
-    function getLockPeriods() external view returns (uint256[] memory) {
-        return lockPeriods;
-    }
-
-    function getInterestRate(uint256 numDays) external view returns (uint256) {
-        return tiers[numDays];
-    }
-
-    function getPositionByID(uint256 positionId)
-        external
-        view
-        returns (Position memory)
-    {
+    function getPositionByID(
+        uint256 positionId
+    ) external view returns (Position memory) {
         return positions[positionId];
     }
 
-    function getPositionIdsForAddress(address walletAddress)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function getPositionIdsForAddress(
+        address walletAddress
+    ) external view returns (uint256[] memory) {
         return positionIdsByAddress[walletAddress];
     }
 
-    function changeUnlockDate(uint256 positionId, uint256 newUnlockDate)
-        external
-        onlyOwner
-    {
-        positions[positionId].unlockDate = newUnlockDate;
+    function unstake() external onlyOwner {
+        require(
+            positions[positionId].walletAddress == msg.sender,
+            "Only position creator may modify position"
+        );
+
+        stakingToken.transfer(msg.sender, amount);
     }
 
-    function closePosition(uint256 positionId) external {
+    function harvest() external onlyOwner {
         require(
             positions[positionId].walletAddress == msg.sender,
             "Only position creator may modify position"
