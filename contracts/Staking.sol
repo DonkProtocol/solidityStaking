@@ -43,6 +43,16 @@ contract Staking {
     }
 
     function harvest() external {
+        uint256 apr = _aprReward;
+
+        uint256 rewardAmount = reward(
+            apr,
+            position.amountStaked,
+            position.createdDate
+        );
+
+        position.rewardStaked = rewardAmount;
+
         require(
             position.walletAddress == msg.sender,
             "Only position creator may modify position"
@@ -53,18 +63,7 @@ contract Staking {
             "the user should have an amount reward to have a harvest"
         );
 
-        //uint256 tokenBalance = stakingToken.balanceOf(address(this));
-
-        uint256 apr = _aprReward;
-
-        uint256 rewardAmount = reward(
-            apr,
-            block.timestamp,
-            position.amountStaked,
-            position.createdDate
-        );
-
-        stakingToken.transfer(msg.sender, rewardAmount);
+        stakingToken.transfer(msg.sender, position.rewardStaked);
 
         position.createdDate = 0;
         position.rewardStaked = 0;
@@ -86,21 +85,36 @@ contract Staking {
         position.amountStaked = 0;
     }
 
-    function getPositions() external view returns (Position memory) {
-        return position;
-    }
-
     function reward(
-        uint256 apr,
-        uint256 current_time,
-        uint256 amount,
-        uint256 start_time
-    ) public pure returns (uint256) {
-        uint256 time_diff = current_time - start_time;
-        uint256 apr_per_second = apr / 100 / 31536000; // 1 year in seconds
-        uint256 apr_per_time_diff = apr_per_second * time_diff;
-        uint256 rewardAmount = (amount * apr_per_time_diff) / 1e18; // divide by 1e18 to convert back to integer
+        uint256 aprValue,
+        uint256 amountStaked,
+        uint256 createdDate
+    ) public view returns (uint256) {
+        uint256 apr = aprValue / 100; // 2500% / year
+        uint256 minutesPassed = (block.timestamp - createdDate) / 60; // divide by 60 to convert to minutes
+        uint256 aprPerMinute = (apr / 365 / 24 / 60) * minutesPassed;
+        uint256 rewardAmount = (amountStaked * aprPerMinute) / 10 ** 20; // divide by 10**20 to convert from wei to Ether
 
         return rewardAmount;
+    }
+
+    function checkBalance(address account) external view returns (uint256) {
+        return stakingToken.balanceOf(account);
+    }
+
+    function getRewards() external view returns (uint256) {
+        uint256 apr = _aprReward;
+
+        uint256 rewardAmount = reward(
+            apr,
+            position.amountStaked,
+            position.createdDate
+        );
+
+        return rewardAmount;
+    }
+
+    function getPositions() external view returns (Position memory) {
+        return position;
     }
 }

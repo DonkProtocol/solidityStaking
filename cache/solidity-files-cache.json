@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\contracts\\Staking.sol": {
-      "lastModificationDate": 1681831404152,
-      "contentHash": "f816489c8020c3b82ec034fc291d3833",
+      "lastModificationDate": 1681947355648,
+      "contentHash": "fe18c888bc5d98468c818a1e83c3eee4",
       "sourceName": "contracts/Staking.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -39,8 +39,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
-      "lastModificationDate": 1681831520943,
-      "contentHash": "ad7c2d0af148c8f9f097d65deeb4da6b",
+      "lastModificationDate": 1681836610955,
+      "contentHash": "5f4c7678e2e69875dbd2ec01d3d288c1",
       "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -74,8 +74,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Metadata.sol": {
-      "lastModificationDate": 1681831520944,
-      "contentHash": "909ab67fc5c25033fe6cd364f8c056f9",
+      "lastModificationDate": 1681836610957,
+      "contentHash": "5e82817b39b46b54032effefa77b2bd9",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -111,8 +111,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
-      "lastModificationDate": 1681831520859,
-      "contentHash": "834a0dde221759af42b030253315b086",
+      "lastModificationDate": 1681836610857,
+      "contentHash": "301fed494a57e27be4323bdff2d054bf",
       "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -150,8 +150,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
-      "lastModificationDate": 1681831520824,
-      "contentHash": "5f2c5c4b6af2dd4551027144797bc8be",
+      "lastModificationDate": 1681836610817,
+      "contentHash": "a06a83834de6f8eb27f6ed608d030ac2",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -185,8 +185,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
-      "lastModificationDate": 1681831520971,
-      "contentHash": "e436cea06129be2c73cda4b1acc848b5",
+      "lastModificationDate": 1681836610980,
+      "contentHash": "cbba874af15bc1c65a1c82aebec1a0fe",
       "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
       "solcConfig": {
         "version": "0.8.0",
