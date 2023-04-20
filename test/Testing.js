@@ -5,7 +5,6 @@ const { BigNumber } = require("ethers");
 describe("Staking", function () {
   beforeEach(async function () {
     const tokenAmount = 100;
-    //const tokenAmountContract = 1000;
     const [deployer, account1, account2] = await ethers.getSigners();
 
     // Deploy token contract
@@ -23,12 +22,6 @@ describe("Staking", function () {
       account1.address,
       ethers.utils.parseEther(tokenAmount.toString())
     );
-    /*
-    await tokenContract.transfer(
-      stakingContract.address,
-      ethers.utils.parseEther(tokenAmountContract.toString())
-    );
-    */
   });
 
   describe("deployment verfication", function () {
@@ -68,7 +61,7 @@ describe("Staking", function () {
   });
 
   describe("it should allow harvesting", function () {
-    it("deposit", async function () {
+    it("harvest", async function () {
       const [deployer, account1, account2] = await ethers.getSigners();
       const stakingAmount = ethers.utils.parseEther("10");
 
@@ -81,19 +74,11 @@ describe("Staking", function () {
       //Stake tokens
       await stakingContract.connect(account1).stake(stakingAmount);
 
-      //it gets the current timestamp
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-
-      //it goes 10 minutes in the future
-      await ethers.provider.send("evm_setNextBlockTimestamp", [
-        currentTimestamp + 600,
-      ]);
-
-      //miny the nest block to apply the timestamp
-      await ethers.provider.send("evm_mine", []);
+      await network.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
 
       const reward = await stakingContract.connect(account1).getRewards();
-      console.log(reward, "user rewards after 10 minutes");
+      console.log(reward, "user rewards after 60 days");
 
       const userBalance = await stakingContract.checkBalance(account1.address);
 
@@ -108,10 +93,18 @@ describe("Staking", function () {
         "the user should have this amount after harvesting"
       );
 
+      const tokenAmountContract = 1000;
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+
       await stakingContract.connect(account1).harvest();
 
       const newBalance = await stakingContract.checkBalance(account1.address);
       expect(newBalance).to.equal(sum);
+      //TODO: cretes the apr logic and verify if more than one user are able to stake
     });
   });
 });
