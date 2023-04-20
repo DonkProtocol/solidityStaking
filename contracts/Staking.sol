@@ -17,7 +17,7 @@ contract Staking {
         uint256 rewardStaked;
     }
 
-    Position position;
+    mapping(address => Position) public positions;
 
     constructor(address token) {
         owner = msg.sender;
@@ -35,11 +35,11 @@ contract Staking {
     function stake(uint256 amount) external {
         stakingToken.transferFrom(msg.sender, address(this), amount);
 
-        position = Position({
+        positions[msg.sender] = Position({
             walletAddress: msg.sender,
             createdDate: block.timestamp,
-            amountStaked: position.amountStaked + amount,
-            rewardStaked: position.rewardStaked
+            amountStaked: positions[msg.sender].amountStaked.add(amount),
+            rewardStaked: positions[msg.sender].rewardStaked
         });
     }
 
@@ -48,42 +48,42 @@ contract Staking {
 
         uint256 rewardAmount = reward(
             apr,
-            position.amountStaked,
-            position.createdDate
+            positions[msg.sender].amountStaked,
+            positions[msg.sender].createdDate
         );
 
-        position.rewardStaked = rewardAmount;
+        positions[msg.sender].rewardStaked = rewardAmount;
 
         require(
-            position.walletAddress == msg.sender,
+            positions[msg.sender].walletAddress == msg.sender,
             "Only position creator may modify position"
         );
 
         require(
-            position.rewardStaked != 0,
+            positions[msg.sender].rewardStaked != 0,
             "the user should have an amount reward to have a harvest"
         );
 
-        stakingToken.transfer(msg.sender, position.rewardStaked);
+        stakingToken.transfer(msg.sender, positions[msg.sender].rewardStaked);
 
-        position.createdDate = 0;
-        position.rewardStaked = 0;
+        positions[msg.sender].createdDate = 0;
+        positions[msg.sender].rewardStaked = 0;
     }
 
     function unstake() external {
         require(
-            position.walletAddress == msg.sender,
+            positions[msg.sender].walletAddress == msg.sender,
             "Only position creator may modify position"
         );
 
         require(
-            position.amountStaked != 0,
+            positions[msg.sender].amountStaked != 0,
             "the user should have an amount staked to unstake"
         );
 
-        stakingToken.transfer(msg.sender, position.amountStaked);
+        stakingToken.transfer(msg.sender, positions[msg.sender].amountStaked);
 
-        position.amountStaked = 0;
+        positions[msg.sender].amountStaked = 0;
     }
 
     function reward(
@@ -107,8 +107,8 @@ contract Staking {
         uint256 apr = getAPR();
         uint256 rewardAmount = reward(
             apr,
-            position.amountStaked,
-            position.createdDate
+            positions[msg.sender].amountStaked,
+            positions[msg.sender].createdDate
         );
 
         return rewardAmount;
@@ -154,6 +154,6 @@ contract Staking {
     }
 
     function getPositions() external view returns (Position memory) {
-        return position;
+        return positions[msg.sender];
     }
 }

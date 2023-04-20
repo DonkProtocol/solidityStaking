@@ -22,6 +22,11 @@ describe("Staking deploy", function () {
       account1.address,
       ethers.utils.parseEther(tokenAmount.toString())
     );
+
+    await tokenContract.transfer(
+      account2.address,
+      ethers.utils.parseEther(tokenAmount.toString())
+    );
   });
 
   describe("deployment verfication", function () {
@@ -49,16 +54,63 @@ describe("Staking deploy", function () {
       const stakingBalance = await stakingContract.checkBalance(
         stakingContract.address
       );
-      expect(stakingBalance).to.equal(stakingAmount);
+
+      const value1 = await stakingContract.connect(account1).getPositions();
+      console.log(value1.amountStaked, "account one staked amount");
+
+      expect(stakingAmount).to.equal(value1.amountStaked);
+
+      // Unstake tokens
+      // await stakingContract.connect(account1).unstake();
+
+      // Check staking balance
+      // const newStakingBalance = await stakingContract.checkBalance(
+      //   stakingContract.address
+      //  );
+      //  expect(newStakingBalance).to.equal(0);
+      //
+      //account two
+
+      const stakingAmount2 = ethers.utils.parseEther("20");
+      //approving tokens
+      const approveTx2 = await tokenContract
+        .connect(account2)
+        .approve(stakingContract.address, stakingAmount2);
+      await approveTx2.wait();
+
+      // Stake tokens
+      await stakingContract.connect(account2).stake(stakingAmount2);
+
+      // Check staking balance
+      const stakingBalance2 = await stakingContract.checkBalance(
+        stakingContract.address
+      );
+
+      const value = await stakingContract.connect(account2).getPositions();
+      console.log(value.amountStaked, "account two staked amount");
+
+      expect(stakingAmount2).to.equal(value.amountStaked);
+
+      expect(stakingBalance2).to.equal("70000000000000000000");
+
+      // Unstake tokens
+      await stakingContract.connect(account2).unstake();
+
+      // Check staking balance
+      const newStakingBalance2 = await stakingContract.checkBalance(
+        stakingContract.address
+      );
+
+      expect(newStakingBalance2).to.equal(stakingAmount);
 
       // Unstake tokens
       await stakingContract.connect(account1).unstake();
 
-      // Check staking balance
-      const newStakingBalance = await stakingContract.checkBalance(
+      const newStakingBalance3 = await stakingContract.checkBalance(
         stakingContract.address
       );
-      expect(newStakingBalance).to.equal(0);
+
+      expect(newStakingBalance3).to.equal("0");
     });
   });
 
