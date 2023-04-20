@@ -9,7 +9,6 @@ contract Staking {
     using SafeMath for uint256;
     address public owner;
     IERC20 public stakingToken;
-    uint256 _aprReward = 25000;
 
     struct Position {
         address walletAddress;
@@ -45,7 +44,7 @@ contract Staking {
     }
 
     function harvest() external {
-        uint256 apr = _aprReward;
+        uint256 apr = getAPR();
 
         uint256 rewardAmount = reward(
             apr,
@@ -105,7 +104,7 @@ contract Staking {
     }
 
     function getRewards() external view returns (uint256) {
-        uint256 apr = _aprReward;
+        uint256 apr = getAPR();
         uint256 rewardAmount = reward(
             apr,
             position.amountStaked,
@@ -113,6 +112,41 @@ contract Staking {
         );
 
         return rewardAmount;
+    }
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a, "SafeMath: subtraction overflow");
+        return a - b;
+    }
+
+    function calculateAPR(
+        uint256 totalStakedPercentage
+    ) public pure returns (uint256) {
+        uint256 apr = 0;
+        if (totalStakedPercentage <= 20) {
+            // 20% do supply
+            apr = 24000 - (24000 - 1500) * (totalStakedPercentage / 20);
+        } else if (totalStakedPercentage <= 40) {
+            // 40% do supply
+            apr = 1500 - (1500 - 750) * ((totalStakedPercentage - 20) / 20);
+        } else if (totalStakedPercentage < 50) {
+            // 50% do supply
+            apr = 750 - (750 / 10) * ((totalStakedPercentage - 40) / 10);
+        } else {
+            apr = 750 - (750 / 50) * (totalStakedPercentage - 50);
+            if (apr < 0) {
+                apr = 0;
+            }
+        }
+        return apr;
+    }
+
+    function getAPR() public view returns (uint256) {
+        uint256 balance = stakingToken.balanceOf(address(this));
+        uint256 totalSupply = stakingToken.totalSupply();
+        uint256 percentage = (balance.mul(100)).div(totalSupply);
+
+        return calculateAPR(percentage);
     }
 
     function checkBalance(address account) external view returns (uint256) {

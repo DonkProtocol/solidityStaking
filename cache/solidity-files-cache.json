@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\contracts\\Staking.sol": {
-      "lastModificationDate": 1681961668666,
-      "contentHash": "17d2aca746f4ef1391c453e0fbab6395",
+      "lastModificationDate": 1682020995081,
+      "contentHash": "5b8f09c44036350cbf8d09789e8f582d",
       "sourceName": "contracts/Staking.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -223,8 +223,8 @@
       ]
     },
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\contracts\\StakingToken.sol": {
-      "lastModificationDate": 1681831404153,
-      "contentHash": "77f72dd7d51b48734e61883ca1b0f216",
+      "lastModificationDate": 1682020716347,
+      "contentHash": "f06225f421cf017728092081a3514040",
       "sourceName": "contracts/StakingToken.sol",
       "solcConfig": {
         "version": "0.8.0",

@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
 
-describe("Staking", function () {
+describe("Staking deploy", function () {
   beforeEach(async function () {
     const tokenAmount = 100;
     const [deployer, account1, account2] = await ethers.getSigners();
@@ -31,37 +31,39 @@ describe("Staking", function () {
     });
   });
 
-  it("it should allow staking and unstaking", async function () {
-    const [deployer, account1, account2] = await ethers.getSigners();
-    const stakingAmount = ethers.utils.parseEther("50");
+  describe("stake and unstaking", function () {
+    it("it should allow staking and unstaking", async function () {
+      const [deployer, account1, account2] = await ethers.getSigners();
+      const stakingAmount = ethers.utils.parseEther("50");
 
-    //approving tokens
-    const approveTx = await tokenContract
-      .connect(account1)
-      .approve(stakingContract.address, stakingAmount);
-    await approveTx.wait();
+      //approving tokens
+      const approveTx = await tokenContract
+        .connect(account1)
+        .approve(stakingContract.address, stakingAmount);
+      await approveTx.wait();
 
-    // Stake tokens
-    await stakingContract.connect(account1).stake(stakingAmount);
+      // Stake tokens
+      await stakingContract.connect(account1).stake(stakingAmount);
 
-    // Check staking balance
-    const stakingBalance = await stakingContract.checkBalance(
-      stakingContract.address
-    );
-    expect(stakingBalance).to.equal(stakingAmount);
+      // Check staking balance
+      const stakingBalance = await stakingContract.checkBalance(
+        stakingContract.address
+      );
+      expect(stakingBalance).to.equal(stakingAmount);
 
-    // Unstake tokens
-    await stakingContract.connect(account1).unstake();
+      // Unstake tokens
+      await stakingContract.connect(account1).unstake();
 
-    // Check staking balance
-    const newStakingBalance = await stakingContract.checkBalance(
-      stakingContract.address
-    );
-    expect(newStakingBalance).to.equal(0);
+      // Check staking balance
+      const newStakingBalance = await stakingContract.checkBalance(
+        stakingContract.address
+      );
+      expect(newStakingBalance).to.equal(0);
+    });
   });
 
-  describe("it should allow harvesting", function () {
-    it("harvest", async function () {
+  describe("harvest", function () {
+    it("it should allow harvesting", async function () {
       const [deployer, account1, account2] = await ethers.getSigners();
       const stakingAmount = ethers.utils.parseEther("10");
 
@@ -105,6 +107,45 @@ describe("Staking", function () {
       const newBalance = await stakingContract.checkBalance(account1.address);
       expect(newBalance).to.equal(sum);
       //TODO: cretes the apr logic and verify if more than one user are able to stake
+    });
+  });
+
+  describe("APR calculations", function () {
+    it("returns the correct APR for 20% of total supply staked", async function () {
+      const tokenAmountContract = 2000;
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+
+      const apr = await stakingContract.getAPR();
+      console.log(apr, "apr current value");
+      expect(apr).to.equal(1500);
+    });
+
+    it("returns the correct APR for 40% of total supply staked", async function () {
+      const tokenAmountContract = 4000;
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+      const apr = await stakingContract.getAPR();
+      console.log(apr, "apr current value");
+      expect(apr).to.equal(750);
+    });
+
+    it("returns the correct APR for 0% of total supply staked", async function () {
+      const tokenAmountContract = 0;
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+      const apr = await stakingContract.getAPR();
+      console.log(apr, "apr current value");
+      expect(apr).to.equal(24000);
     });
   });
 });
