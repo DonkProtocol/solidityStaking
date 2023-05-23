@@ -131,8 +131,22 @@ describe("Staking deploy", function () {
       await network.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
       await ethers.provider.send("evm_mine");
 
+      var tokenAmountContractt = BigNumber.from("150000000000");
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContractt.toString())
+      );
+
       const reward = await stakingContract.connect(account1).getRewards();
       console.log(reward, "user rewards after 60 days");
+
+      const ap = await stakingContract.connect(account1).getAPR();
+      const bigNumber = BigNumber.from(reward);
+      const decimalValue = parseFloat(bigNumber.toString()) / 10 ** 18;
+
+      console.log(ap, "aprrrrrrr");
+      console.log(decimalValue, "reward value converted");
 
       const userBalance = await stakingContract.checkBalance(account1.address);
 
@@ -163,8 +177,8 @@ describe("Staking deploy", function () {
   });
 
   describe("APR calculations", function () {
-    it("returns the correct APR for 20% of total supply staked", async function () {
-      const tokenAmountContract = 2000;
+    it("returns the correct APR for 10% of total supply staked", async function () {
+      const tokenAmountContract = BigNumber.from("100000000000");
 
       await tokenContract.transfer(
         stakingContract.address,
@@ -173,11 +187,37 @@ describe("Staking deploy", function () {
 
       const apr = await stakingContract.getAPR();
       console.log(apr, "apr current value");
-      expect(apr).to.equal(1500);
+      expect(apr).to.equal(1208);
+    });
+
+    it("returns the correct APR for 15% of total supply staked", async function () {
+      const tokenAmountContract = BigNumber.from("150000000000");
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+
+      const apr = await stakingContract.getAPR();
+      console.log(apr, "apr current value");
+      expect(apr).to.equal(612);
+    });
+
+    it("returns the correct APR for 20% of total supply staked", async function () {
+      const tokenAmountContract = BigNumber.from("200000000000");
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+
+      const apr = await stakingContract.getAPR();
+      console.log(apr, "apr current value");
+      expect(apr).to.equal(15);
     });
 
     it("returns the correct APR for 40% of total supply staked", async function () {
-      const tokenAmountContract = 4000;
+      const tokenAmountContract = BigNumber.from("400000000000");
 
       await tokenContract.transfer(
         stakingContract.address,
@@ -185,7 +225,8 @@ describe("Staking deploy", function () {
       );
       const apr = await stakingContract.getAPR();
       console.log(apr, "apr current value");
-      expect(apr).to.equal(750);
+
+      expect(apr).to.equal(7);
     });
 
     it("returns the correct APR for 0% of total supply staked", async function () {
@@ -197,7 +238,8 @@ describe("Staking deploy", function () {
       );
       const apr = await stakingContract.getAPR();
       console.log(apr, "apr current value");
-      expect(apr).to.equal(24000);
+
+      expect(apr).to.equal(2400);
     });
   });
 });

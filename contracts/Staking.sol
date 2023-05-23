@@ -66,7 +66,7 @@ contract Staking {
 
         stakingToken.transfer(msg.sender, positions[msg.sender].rewardStaked);
 
-        positions[msg.sender].createdDate = 0;
+        positions[msg.sender].createdDate = block.timestamp;
         positions[msg.sender].rewardStaked = 0;
     }
 
@@ -115,8 +115,24 @@ contract Staking {
     }
 
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
+        require(b <= a, "Subtraction error");
+        uint256 result = a - b;
+        return result;
+    }
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "Division by zero");
+        uint256 result = a / b;
+        return result;
+    }
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+        uint256 result = a * b;
+        require(result / a == b, "Multiplication error");
+        return result;
     }
 
     function calculateAPR(
@@ -125,19 +141,17 @@ contract Staking {
         uint256 apr = 0;
         if (totalStakedPercentage <= 20) {
             // 20% do supply
-            apr = 24000 - (24000 - 1500) * (totalStakedPercentage / 20);
+            apr = 2400 - (((2400 - 15) * totalStakedPercentage) / 20);
         } else if (totalStakedPercentage <= 40) {
             // 40% do supply
-            apr = 1500 - (1500 - 750) * ((totalStakedPercentage - 20) / 20);
+            apr = 15 - (((15 - 7) * (totalStakedPercentage - 20)) / 20);
         } else if (totalStakedPercentage < 50) {
             // 50% do supply
-            apr = 750 - (750 / 10) * ((totalStakedPercentage - 40) / 10);
+            apr = 7 - ((7 * (totalStakedPercentage - 40)) / 10);
         } else {
-            apr = 750 - (750 / 50) * (totalStakedPercentage - 50);
-            if (apr < 0) {
-                apr = 0;
-            }
+            apr = (7 * (totalStakedPercentage - 50)) / 50;
         }
+
         return apr;
     }
 
