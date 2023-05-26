@@ -17,7 +17,12 @@ contract Staking {
         uint256 rewardStaked;
     }
 
+    struct TotalStaked {
+        uint256 amountStaked;
+    }
+
     mapping(address => Position) public positions;
+    TotalStaked public stakedAmount;
 
     constructor(address token) {
         owner = msg.sender;
@@ -26,7 +31,7 @@ contract Staking {
 
     modifier onlyOwner() {
         require(
-            owner == msg.sender,
+            positions[msg.sender].walletAddress == msg.sender,
             "Only owner may modify an staking position"
         );
         _;
@@ -35,15 +40,33 @@ contract Staking {
     function stake(uint256 amount) external {
         stakingToken.transferFrom(msg.sender, address(this), amount);
 
-        positions[msg.sender] = Position({
-            walletAddress: msg.sender,
-            createdDate: block.timestamp,
-            amountStaked: positions[msg.sender].amountStaked.add(amount),
-            rewardStaked: positions[msg.sender].rewardStaked
+        if (positions[msg.sender].createdDate != 0) {
+            positions[msg.sender] = Position({
+                walletAddress: msg.sender,
+                createdDate: positions[msg.sender].createdDate,
+                amountStaked: positions[msg.sender].amountStaked += amount,
+                rewardStaked: positions[msg.sender].rewardStaked
+            });
+        } else {
+            positions[msg.sender] = Position({
+                walletAddress: msg.sender,
+                createdDate: block.timestamp,
+                amountStaked: positions[msg.sender].amountStaked += amount,
+                rewardStaked: positions[msg.sender].rewardStaked
+            });
+        }
+
+        stakedAmount = TotalStaked({
+            amountStaked: stakedAmount.amountStaked + amount
         });
     }
 
-    function harvest() external {
+    function harvest() external onlyOwner {
+        require(
+            positions[msg.sender].amountStaked != 0,
+            "the user should have an amount reward to have a harvest"
+        );
+
         uint256 apr = getAPR();
 
         uint256 rewardAmount = reward(
@@ -54,34 +77,35 @@ contract Staking {
 
         positions[msg.sender].rewardStaked = rewardAmount;
 
-        require(
-            positions[msg.sender].walletAddress == msg.sender,
-            "Only position creator may modify position"
-        );
-
-        require(
-            positions[msg.sender].rewardStaked != 0,
-            "the user should have an amount reward to have a harvest"
-        );
-
         stakingToken.transfer(msg.sender, positions[msg.sender].rewardStaked);
 
         positions[msg.sender].createdDate = block.timestamp;
+
         positions[msg.sender].rewardStaked = 0;
     }
 
-    function unstake() external {
-        require(
-            positions[msg.sender].walletAddress == msg.sender,
-            "Only position creator may modify position"
-        );
-
+    function unstake() external onlyOwner {
         require(
             positions[msg.sender].amountStaked != 0,
             "the user should have an amount staked to unstake"
         );
 
         stakingToken.transfer(msg.sender, positions[msg.sender].amountStaked);
+
+        stakedAmount = TotalStaked({
+            amountStaked: stakedAmount.amountStaked -
+                positions[msg.sender].amountStaked
+        });
+
+        uint256 apr = getAPR();
+
+        uint256 rewardAmount = reward(
+            apr,
+            positions[msg.sender].amountStaked,
+            positions[msg.sender].createdDate
+        );
+
+        positions[msg.sender].rewardStaked = rewardAmount;
 
         positions[msg.sender].amountStaked = 0;
     }
@@ -91,19 +115,25 @@ contract Staking {
         uint256 amountStaked,
         uint256 startDate
     ) public view returns (uint256) {
-        uint256 secondsElapsed = block.timestamp - startDate;
-        uint256 minutesElapsed = secondsElapsed.div(60);
+        if (positions[msg.sender].amountStaked != 0) {
+            uint256 secondsElapsed = block.timestamp - startDate;
+            uint256 minutesElapsed = secondsElapsed.div(60);
 
-        uint256 yearlyRate = apr.mul(10 ** 16); // convert APR to wei/year
-        uint256 ratePerMinute = yearlyRate.div(365 * 24 * 60); // divide by total number of minutes in a year
+            uint256 yearlyRate = apr.mul(10 ** 16); // convert APR to wei/year
+            uint256 ratePerMinute = yearlyRate.div(365 * 24 * 60); // divide by total number of minutes in a year
 
-        uint256 rewardPerMinute = amountStaked.mul(ratePerMinute).div(10 ** 18);
-        uint256 rewardAmount = rewardPerMinute.mul(minutesElapsed);
+            uint256 rewardPerMinute = amountStaked.mul(ratePerMinute).div(
+                10 ** 18
+            );
+            uint256 rewardAmount = rewardPerMinute.mul(minutesElapsed);
 
-        return rewardAmount;
+            return rewardAmount;
+        }
+
+        return positions[msg.sender].rewardStaked;
     }
 
-    function getRewards() external view returns (uint256) {
+    function getRewards() external returns (uint256) {
         uint256 apr = getAPR();
         uint256 rewardAmount = reward(
             apr,
@@ -111,28 +141,9 @@ contract Staking {
             positions[msg.sender].createdDate
         );
 
+        positions[msg.sender].rewardStaked = rewardAmount;
+
         return rewardAmount;
-    }
-
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "Subtraction error");
-        uint256 result = a - b;
-        return result;
-    }
-
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "Division by zero");
-        uint256 result = a / b;
-        return result;
-    }
-
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) {
-            return 0;
-        }
-        uint256 result = a * b;
-        require(result / a == b, "Multiplication error");
-        return result;
     }
 
     function calculateAPR(
@@ -156,7 +167,7 @@ contract Staking {
     }
 
     function getAPR() public view returns (uint256) {
-        uint256 balance = stakingToken.balanceOf(address(this));
+        uint256 balance = stakedAmount.amountStaked;
         uint256 totalSupply = stakingToken.totalSupply();
         uint256 percentage = (balance.mul(100)).div(totalSupply);
 
@@ -169,5 +180,9 @@ contract Staking {
 
     function getPositions() external view returns (Position memory) {
         return positions[msg.sender];
+    }
+
+    function getTotalStakedAmount() external view returns (uint256) {
+        return stakedAmount.amountStaked;
     }
 }
