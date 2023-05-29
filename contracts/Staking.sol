@@ -7,8 +7,9 @@ pragma solidity ^0.8.0;
 //contract for staking
 contract Staking {
     using SafeMath for uint256;
-    address public owner;
+    address public adminWallet;
     IERC20 public stakingToken;
+    uint256 public stakingFee = 0;
 
     struct Position {
         address walletAddress;
@@ -26,7 +27,7 @@ contract Staking {
     TotalStaked public stakedAmount;
 
     constructor(address token) {
-        owner = msg.sender;
+        adminWallet = msg.sender;
         stakingToken = IERC20(token);
     }
 
@@ -35,6 +36,11 @@ contract Staking {
             positions[msg.sender].walletAddress == msg.sender,
             "Only owner may modify an staking position"
         );
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(adminWallet == msg.sender, "Only admin may modify a Fee taxes");
         _;
     }
 
@@ -120,7 +126,10 @@ contract Staking {
             rewardAmount +
             positions[msg.sender].savedReward;
 
-        stakingToken.transfer(msg.sender, amount);
+        uint256 feeValue = amount.mul(stakingFee).div(10000);
+        uint256 feeApplied = amount.sub(feeValue);
+
+        stakingToken.transfer(msg.sender, feeApplied);
 
         stakedAmount = TotalStaked({
             amountStaked: stakedAmount.amountStaked -
@@ -131,6 +140,10 @@ contract Staking {
         positions[msg.sender].rewardStaked = 0;
         positions[msg.sender].amountStaked = 0;
         positions[msg.sender].savedReward = 0;
+
+        if (feeValue > 0) {
+            stakingToken.transfer(adminWallet, feeValue);
+        }
     }
 
     function reward(
@@ -207,5 +220,13 @@ contract Staking {
 
     function getTotalStakedAmount() external view returns (uint256) {
         return stakedAmount.amountStaked;
+    }
+
+    function getStakingFee() external view returns (uint256) {
+        return stakingFee;
+    }
+
+    function setStakingFee(uint256 fee) external onlyAdmin returns (uint256) {
+        return stakingFee = fee;
     }
 }

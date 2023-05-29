@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\will\\Documents\\programing\\solidityStaking\\solidityStaking\\contracts\\Staking.sol": {
-      "lastModificationDate": 1685367845497,
-      "contentHash": "7216acfa9e1e53c79ddb9c630c28f145",
+      "lastModificationDate": 1685374169810,
+      "contentHash": "fd92f9fba10bb4e4b8b2bce9446fe84b",
       "sourceName": "contracts/Staking.sol",
       "solcConfig": {
         "version": "0.8.0",

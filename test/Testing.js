@@ -32,7 +32,7 @@ describe("Staking deploy", function () {
   describe("deployment verfication", function () {
     it("should set owner", async function () {
       const [deployer, account1, account2] = await ethers.getSigners();
-      expect(await stakingContract.owner()).to.equal(deployer.address);
+      expect(await stakingContract.adminWallet()).to.equal(deployer.address);
     });
   });
 
@@ -334,6 +334,53 @@ describe("Staking deploy", function () {
 
       expect(allPositions5.savedReward).to.equal("0");
       expect(reward3).to.equal("0");
+    });
+  });
+
+  describe("Fees and auto restaking", function () {
+    it("it should set the fees and restake the user rewards", async function () {
+      const tokenAmountContract = ethers.utils.parseEther("100");
+      const tokenAmountStakingContract = ethers.utils.parseEther("100000");
+      const [deployer, account1, account2] = await ethers.getSigners();
+
+      await tokenContract.transfer(account1.address, tokenAmountContract);
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        tokenAmountStakingContract
+      );
+
+      const stakingAmount = ethers.utils.parseEther("10");
+      const allowance = ethers.utils.parseEther("100");
+      //approving tokens
+      const approveTx = await tokenContract
+        .connect(account1)
+        .approve(stakingContract.address, allowance);
+      await approveTx.wait();
+
+      //1
+      const balance = await stakingContract.checkBalance(account1.address);
+
+      await stakingContract.connect(account1).stake(stakingAmount);
+
+      await stakingContract.connect(account1).unstake();
+
+      const balance1 = await stakingContract.checkBalance(account1.address);
+
+      expect(balance1).to.equal(balance);
+
+      //2
+      //98% of fees
+      await stakingContract.connect(deployer).setStakingFee(9800);
+
+      await stakingContract.connect(account1).stake(stakingAmount);
+
+      await stakingContract.connect(account1).unstake();
+
+      const balance2 = await stakingContract.checkBalance(account1.address);
+
+      console.log(balance2, "after fee applied");
+      expect(balance1).to.not.equal(balance2);
     });
   });
   describe("APR calculations", function () {
