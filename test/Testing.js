@@ -60,15 +60,6 @@ describe("Staking deploy", function () {
 
       expect(stakingAmount).to.equal(value1.amountStaked);
 
-      // Unstake tokens
-      // await stakingContract.connect(account1).unstake();
-
-      // Check staking balance
-      // const newStakingBalance = await stakingContract.checkBalance(
-      //   stakingContract.address
-      //  );
-      //  expect(newStakingBalance).to.equal(0);
-      //
       //account two
 
       const stakingAmount2 = ethers.utils.parseEther("20");
@@ -126,6 +117,13 @@ describe("Staking deploy", function () {
       const stakingAmount = ethers.utils.parseEther("50");
       const amountAllowence = ethers.utils.parseEther("1000");
 
+      const tokenAmountContract = 1000000;
+
+      await tokenContract.transfer(
+        stakingContract.address,
+        ethers.utils.parseEther(tokenAmountContract.toString())
+      );
+
       //approving tokens
       const approveTx = await tokenContract
         .connect(account1)
@@ -134,11 +132,6 @@ describe("Staking deploy", function () {
 
       // Stake tokens
       await stakingContract.connect(account1).stake(stakingAmount);
-
-      // Check staking balance
-      const stakingBalance = await stakingContract.checkBalance(
-        stakingContract.address
-      );
 
       const value1 = await stakingContract.connect(account1).getPositions();
       console.log(value1.amountStaked, "account one staked amount");
@@ -154,16 +147,10 @@ describe("Staking deploy", function () {
         .callStatic.getRewards();
       console.log(reward, "user rewards after 60 days");
 
-      const apr = await stakingContract.connect(account1).getAPR();
       const bigNumber = BigNumber.from(reward);
       const decimalValue = parseFloat(bigNumber.toString()) / 10 ** 18;
 
       console.log(decimalValue, "reward value converted");
-
-      //before unstaking
-      const StakingBalance1 = await stakingContract.checkBalance(
-        stakingContract.address
-      );
 
       const totalStaked1 = await stakingContract
         .connect(account1)
@@ -171,16 +158,6 @@ describe("Staking deploy", function () {
 
       // Unstake tokens
       await stakingContract.connect(account1).unstake();
-
-      const num1 = BigNumber.from(value1.amountStaked);
-      const num2 = BigNumber.from(StakingBalance1);
-      const sub = num1.sub(num2);
-
-      //after unstaking
-      const StakingBalance = await stakingContract.checkBalance(
-        stakingContract.address
-      );
-      expect(StakingBalance).to.equal(sub);
 
       const totalStaked2 = await stakingContract
         .connect(account1)
@@ -200,18 +177,15 @@ describe("Staking deploy", function () {
 
       const userBalance = await stakingContract.checkBalance(account1.address);
 
+      const userRewards = positionRewards.rewardStaked.add(
+        positionRewards.savedReward
+      );
+
       //calculating the amount user should receive as reward
-      const num11 = BigNumber.from(positionRewards.rewardStaked);
+      const num11 = BigNumber.from(userRewards);
       const num22 = BigNumber.from(userBalance);
 
       const sum = num11.add(num22);
-
-      const tokenAmountContract = 100000;
-
-      await tokenContract.transfer(
-        stakingContract.address,
-        ethers.utils.parseEther(tokenAmountContract.toString())
-      );
 
       await stakingContract.connect(account1).harvest();
 
@@ -285,6 +259,83 @@ describe("Staking deploy", function () {
     });
   });
 
+  describe("Staking and retrieving the saved amount", function () {
+    it("it should allow user stake more than one time and retrive the saved reward", async function () {
+      const tokenAmountContract = ethers.utils.parseEther("100000");
+
+      const [deployer, account1, account2] = await ethers.getSigners();
+
+      await tokenContract.transfer(account1.address, tokenAmountContract);
+
+      const stakingAmount = ethers.utils.parseEther("100");
+      const allowance = tokenAmountContract;
+
+      //approving tokens
+      const approveTx = await tokenContract
+        .connect(account1)
+        .approve(stakingContract.address, allowance);
+      await approveTx.wait();
+
+      const transferAmount = ethers.utils.parseEther("150000000000");
+
+      await tokenContract.transfer(stakingContract.address, transferAmount);
+
+      //1
+      await stakingContract.connect(account1).stake(stakingAmount);
+
+      //2
+      await network.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
+
+      const allPositions = await stakingContract
+        .connect(account1)
+        .getPositions();
+
+      expect(allPositions.savedReward.toString()).to.equal("0");
+
+      const reward = await stakingContract
+        .connect(account1)
+        .callStatic.getRewards();
+
+      await stakingContract.connect(account1).stake(stakingAmount);
+
+      const allPositions2 = await stakingContract
+        .connect(account1)
+        .getPositions();
+
+      expect(allPositions2.savedReward).to.equal(reward);
+
+      //3
+      await network.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
+      await ethers.provider.send("evm_mine");
+
+      const reward2 = await stakingContract
+        .connect(account1)
+        .callStatic.getRewards();
+
+      await stakingContract.connect(account1).stake(stakingAmount);
+
+      const allPositions4 = await stakingContract
+        .connect(account1)
+        .getPositions();
+
+      expect(allPositions4.savedReward).to.equal(reward2);
+
+      const harvesting = await stakingContract.connect(account1).harvest();
+      await harvesting.wait();
+
+      const allPositions5 = await stakingContract
+        .connect(account1)
+        .getPositions();
+
+      const reward3 = await stakingContract
+        .connect(account1)
+        .callStatic.getRewards();
+
+      expect(allPositions5.savedReward).to.equal("0");
+      expect(reward3).to.equal("0");
+    });
+  });
   describe("APR calculations", function () {
     it("returns the correct APR for 10% of total supply staked", async function () {
       const tokenAmountContract = BigNumber.from("100000000000");

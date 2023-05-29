@@ -15,6 +15,7 @@ contract Staking {
         uint256 createdDate;
         uint256 amountStaked;
         uint256 rewardStaked;
+        uint256 savedReward;
     }
 
     struct TotalStaked {
@@ -40,19 +41,31 @@ contract Staking {
     function stake(uint256 amount) external {
         stakingToken.transferFrom(msg.sender, address(this), amount);
 
-        if (positions[msg.sender].createdDate != 0) {
+        uint256 apr = getAPR();
+
+        uint256 rewardAmount = reward(
+            apr,
+            positions[msg.sender].amountStaked,
+            positions[msg.sender].createdDate
+        );
+
+        positions[msg.sender].rewardStaked = rewardAmount;
+
+        if (positions[msg.sender].rewardStaked != 0) {
             positions[msg.sender] = Position({
                 walletAddress: msg.sender,
-                createdDate: positions[msg.sender].createdDate,
+                createdDate: block.timestamp,
                 amountStaked: positions[msg.sender].amountStaked += amount,
-                rewardStaked: positions[msg.sender].rewardStaked
+                rewardStaked: 0,
+                savedReward: positions[msg.sender].savedReward += rewardAmount
             });
         } else {
             positions[msg.sender] = Position({
                 walletAddress: msg.sender,
                 createdDate: block.timestamp,
                 amountStaked: positions[msg.sender].amountStaked += amount,
-                rewardStaked: positions[msg.sender].rewardStaked
+                rewardStaked: positions[msg.sender].rewardStaked,
+                savedReward: positions[msg.sender].savedReward
             });
         }
 
@@ -77,11 +90,16 @@ contract Staking {
 
         positions[msg.sender].rewardStaked = rewardAmount;
 
-        stakingToken.transfer(msg.sender, positions[msg.sender].rewardStaked);
+        stakingToken.transfer(
+            msg.sender,
+            positions[msg.sender].rewardStaked +
+                positions[msg.sender].savedReward
+        );
 
         positions[msg.sender].createdDate = block.timestamp;
 
         positions[msg.sender].rewardStaked = 0;
+        positions[msg.sender].savedReward = 0;
     }
 
     function unstake() external onlyOwner {
@@ -89,13 +107,6 @@ contract Staking {
             positions[msg.sender].amountStaked != 0,
             "the user should have an amount staked to unstake"
         );
-
-        stakingToken.transfer(msg.sender, positions[msg.sender].amountStaked);
-
-        stakedAmount = TotalStaked({
-            amountStaked: stakedAmount.amountStaked -
-                positions[msg.sender].amountStaked
-        });
 
         uint256 apr = getAPR();
 
@@ -105,9 +116,21 @@ contract Staking {
             positions[msg.sender].createdDate
         );
 
-        positions[msg.sender].rewardStaked = rewardAmount;
+        uint256 amount = positions[msg.sender].amountStaked +
+            rewardAmount +
+            positions[msg.sender].savedReward;
 
+        stakingToken.transfer(msg.sender, amount);
+
+        stakedAmount = TotalStaked({
+            amountStaked: stakedAmount.amountStaked -
+                positions[msg.sender].amountStaked
+        });
+
+        positions[msg.sender].createdDate = 0;
+        positions[msg.sender].rewardStaked = 0;
         positions[msg.sender].amountStaked = 0;
+        positions[msg.sender].savedReward = 0;
     }
 
     function reward(
@@ -133,7 +156,7 @@ contract Staking {
         return positions[msg.sender].rewardStaked;
     }
 
-    function getRewards() external returns (uint256) {
+    function getRewards() external view returns (uint256) {
         uint256 apr = getAPR();
         uint256 rewardAmount = reward(
             apr,
@@ -141,9 +164,9 @@ contract Staking {
             positions[msg.sender].createdDate
         );
 
-        positions[msg.sender].rewardStaked = rewardAmount;
+        uint256 savedReward = positions[msg.sender].savedReward;
 
-        return rewardAmount;
+        return rewardAmount + savedReward;
     }
 
     function calculateAPR(
