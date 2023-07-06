@@ -8,8 +8,10 @@ pragma solidity ^0.8.0;
 contract Staking {
     using SafeMath for uint256;
     address public adminWallet;
-    IERC20 public stakingToken;
+    IERC20 public immutable stakingToken;
     uint256 public stakingFee = 0;
+    uint256 public daysFee;
+    uint256 public currentApr;
 
     struct Position {
         address walletAddress;
@@ -17,6 +19,7 @@ contract Staking {
         uint256 amountStaked;
         uint256 rewardStaked;
         uint256 savedReward;
+        uint256 firstDate;
     }
 
     struct TotalStaked {
@@ -26,9 +29,11 @@ contract Staking {
     mapping(address => Position) public positions;
     TotalStaked public stakedAmount;
 
-    constructor(address token) {
+    constructor(address token, uint256 _daysFee, uint256 _apr) {
         adminWallet = msg.sender;
         stakingToken = IERC20(token);
+        daysFee = _daysFee;
+        currentApr = _apr;
     }
 
     modifier onlyOwner() {
@@ -63,7 +68,8 @@ contract Staking {
                 createdDate: block.timestamp,
                 amountStaked: positions[msg.sender].amountStaked += amount,
                 rewardStaked: 0,
-                savedReward: positions[msg.sender].savedReward += rewardAmount
+                savedReward: positions[msg.sender].savedReward += rewardAmount,
+                firstDate: block.timestamp
             });
         } else {
             positions[msg.sender] = Position({
@@ -71,7 +77,8 @@ contract Staking {
                 createdDate: block.timestamp,
                 amountStaked: positions[msg.sender].amountStaked += amount,
                 rewardStaked: positions[msg.sender].rewardStaked,
-                savedReward: positions[msg.sender].savedReward
+                savedReward: positions[msg.sender].savedReward,
+                firstDate: positions[msg.sender].firstDate
             });
         }
 
@@ -129,7 +136,9 @@ contract Staking {
         uint256 feeValue = amount.mul(stakingFee).div(10000);
         uint256 feeApplied = amount.sub(feeValue);
 
-        stakingToken.transfer(msg.sender, feeApplied);
+        uint fee0 = hasPassedSevenDays(feeApplied);
+
+        stakingToken.transfer(msg.sender, feeApplied.sub(fee0));
 
         stakedAmount = TotalStaked({
             amountStaked: stakedAmount.amountStaked -
@@ -143,6 +152,10 @@ contract Staking {
 
         if (feeValue > 0) {
             stakingToken.transfer(adminWallet, feeValue);
+        }
+
+        if (fee0 > 0) {
+            stakingToken.transfer(adminWallet, fee0);
         }
     }
 
@@ -182,6 +195,7 @@ contract Staking {
         return rewardAmount + savedReward;
     }
 
+    /*
     function calculateAPR(
         uint256 totalStakedPercentage
     ) public pure returns (uint256) {
@@ -201,13 +215,30 @@ contract Staking {
 
         return apr;
     }
+*/
+    //calculating the 7 days fee
+    function hasPassedSevenDays(uint amount) private view returns (uint fee0) {
+        require(daysFee <= 100, "INSUFFICIENT_FEES");
+        uint256 currentTimestamp = block.timestamp;
+        uint256 sevenDaysInSeconds = 7 days;
+        uint256 fee = daysFee;
+
+        if (
+            currentTimestamp >=
+            positions[msg.sender].firstDate + sevenDaysInSeconds
+        ) {
+            fee0 = (amount * fee) / 10000; //0.5%
+        } else {
+            fee0 = 0;
+        }
+    }
 
     function getAPR() public view returns (uint256) {
-        uint256 balance = stakedAmount.amountStaked;
-        uint256 totalSupply = stakingToken.totalSupply();
-        uint256 percentage = (balance.mul(100)).div(totalSupply);
+        // uint256 balance = stakedAmount.amountStaked;
+        // uint256 totalSupply = stakingToken.totalSupply();
+        // uint256 percentage = (balance.mul(100)).div(totalSupply);
 
-        return calculateAPR(percentage);
+        return currentApr;
     }
 
     function checkBalance(address account) external view returns (uint256) {
@@ -228,5 +259,26 @@ contract Staking {
 
     function setStakingFee(uint256 fee) external onlyAdmin returns (uint256) {
         return stakingFee = fee;
+    }
+
+    function setDaysFee(uint256 _daysFee) external onlyAdmin returns (uint256) {
+        return daysFee = _daysFee;
+    }
+
+    function setApr(uint256 _apr) external onlyAdmin returns (uint256) {
+        return currentApr = _apr;
+    }
+
+    function setAdminWallet(
+        address _adminWallet
+    ) external onlyAdmin returns (address) {
+        return adminWallet = _adminWallet;
+    }
+
+    function adminWithdraw() public onlyAdmin {
+        uint256 totalSupply = stakingToken.balanceOf(address(this));
+        require(totalSupply > 0, "No staking tokens available");
+
+        stakingToken.transfer(adminWallet, totalSupply);
     }
 }
