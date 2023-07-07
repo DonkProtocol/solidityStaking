@@ -274,11 +274,4 @@ contract Staking {
     ) external onlyAdmin returns (address) {
         return adminWallet = _adminWallet;
     }
-
-    function adminWithdraw() public onlyAdmin {
-        uint256 totalSupply = stakingToken.balanceOf(address(this));
-        require(totalSupply > 0, "No staking tokens available");
-
-        stakingToken.transfer(adminWallet, totalSupply);
-    }
 }
